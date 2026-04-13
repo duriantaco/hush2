@@ -40,17 +40,25 @@ Before opening a pull request:
 - update `SECURITY.md` if the security boundary changed
 - update `CHANGELOG.md` for notable user-facing changes
 
-Use short, imperative commit messages. Conventional Commits are welcome, but they are not required.
+Use Conventional Commit messages for merged changes whenever possible. `release-please` uses them to decide version bumps and release notes:
+
+- `feat:` for user-facing features
+- `fix:` for bug fixes
+- `docs:` for documentation changes
+- add `!` or a `BREAKING CHANGE:` footer for breaking changes
+
+Short, imperative commit subjects are still preferred.
 
 ## Versioning And Releases
 
 `hush2` uses semantic versioning once releases are tagged.
 
-For now, versioning is manual. When preparing a release:
+`release-please` now manages version bumps, changelog updates, and release PRs for normal development on `main`.
 
-1. Update the version in `pyproject.toml`.
-2. Update `src/hush2/__init__.py`.
-3. Add release notes to `CHANGELOG.md`.
-4. Tag the release in git.
+In normal use:
 
-Release automation is intentionally not configured yet. Until the repository, release channel, and publishing credentials are in place, manual versioning is lower risk than unverified automation.
+1. Merge changes with Conventional Commit messages.
+2. Let `release-please` open the release PR.
+3. Merge the release PR to cut the next version and GitHub release.
+
+Manual version edits should be reserved for exceptional cases such as repository bootstrapping or repairing a bad release.

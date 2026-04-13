@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and the project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-04-13
+
 ### Added
 
 - Local and global encrypted vaults with environment-specific selection.

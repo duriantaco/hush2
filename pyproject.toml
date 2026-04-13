@@ -24,6 +24,12 @@ dependencies = [
     "rich>=13.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/duriantaco/hush2"
+Repository = "https://github.com/duriantaco/hush2"
+Issues = "https://github.com/duriantaco/hush2/issues"
+Changelog = "https://github.com/duriantaco/hush2/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
