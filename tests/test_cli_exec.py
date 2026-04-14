@@ -6,6 +6,7 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from hush2.cli import cli
@@ -100,3 +101,36 @@ class TestExecPattern:
             latest = exec_entries[0]["details"]
             assert latest["env_fallback_count"] == 1
             assert latest["env_fallback_names"] == ["MISSING_SECRET"]
+
+    @pytest.mark.parametrize("no_mask", [False, True])
+    def test_exec_missing_executable_fails_cleanly(self, tmp_path, no_mask):
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            _init(runner)
+            _invoke(runner, ["set", "KEY", "vault-value"])
+
+            args = ["KEY"]
+            if no_mask:
+                args.append("--no-mask")
+            args.extend(["--", "definitely-not-a-real-command"])
+
+            result = _invoke(runner, args)
+            assert result.exit_code == USER_ERROR
+            assert "Failed to launch command" in result.output
+            assert "definitely-not-a-real-command" in result.output
+
+    @pytest.mark.parametrize("no_mask", [False, True])
+    def test_run_missing_executable_fails_cleanly(self, tmp_path, no_mask):
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            _init(runner)
+
+            args = ["run"]
+            if no_mask:
+                args.append("--no-mask")
+            args.append("definitely-not-a-real-command")
+
+            result = _invoke(runner, args)
+            assert result.exit_code == USER_ERROR
+            assert "Failed to launch command" in result.output
+            assert "definitely-not-a-real-command" in result.output

@@ -1,5 +1,3 @@
-"""Secret masking — replace secret values in output text."""
-
 from __future__ import annotations
 
 import hashlib
@@ -19,6 +17,8 @@ def create_masker(secrets: dict[str, str], style: str = "full") -> Callable[[str
 
     replacements: list[tuple[str, str]] = []
     for name, value in secrets.items():
+        if not value:
+            continue
         if len(value) < 2:
             replacement = "[REDACTED]"
         elif style == "partial":
@@ -33,7 +33,9 @@ def create_masker(secrets: dict[str, str], style: str = "full") -> Callable[[str
             replacement = "[REDACTED]"
         replacements.append((value, replacement))
 
-    # Sort by length descending so longer secrets are replaced first
+    if not replacements:
+        return lambda text: text
+
     replacements.sort(key=lambda x: len(x[0]), reverse=True)
 
     def masker(text: str) -> str:

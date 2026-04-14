@@ -6,6 +6,18 @@ The format is based on Keep a Changelog, and the project follows Semantic Versio
 
 ## [Unreleased]
 
+### Changed
+
+- README positioning, install guidance, and onboarding flow now emphasize `hush2` as a local, agent-safe secrets runner for terminal workflows.
+- Documentation now includes a trust checklist built around `doctor`, `scan --staged`, and `backup`.
+
+### Fixed
+
+- `.env` export and import now round-trip escaped values more reliably.
+- Empty secret values no longer break output masking.
+- Opening an existing vault now fails cleanly when the salt file is missing or invalid instead of silently recreating it.
+- `run` and `NAME -- CMD` now report subprocess launch failures as CLI errors instead of surfacing raw exceptions.
+
 ## [0.1.0] - 2026-04-13
 
 ### Added

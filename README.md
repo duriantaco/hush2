@@ -1,16 +1,27 @@
 # hush2
 
-`hush2` is a local encrypted secrets manager for AI agents, developer CLIs, and project-level environment variables.
+`hush2` is a local, agent-safe secrets runner for developers who live in the terminal.
 
-It stores secrets in an AES-256-GCM encrypted SQLite vault, injects them into subprocesses as environment variables, masks them from command output by default, and supports recovery tooling for older corrupted vaults.
+It stores secrets in an AES-256-GCM encrypted SQLite vault, injects them into subprocesses as environment variables, masks them from command output by default, and includes recovery tooling when older vault data goes bad.
+
+The sharpest use case is simple: run a deploy script, migration, test harness, or agent-written command with only the secrets it needs, without pasting values into prompts, shell history, or plaintext `.env` files.
 
 ## Why Use hush2
 
 - Keep API keys, database URLs, and tokens out of prompts, shell history, and plaintext `.env` files.
 - Run agent-written commands with secrets available at runtime instead of pasting values into chat.
-- Manage local, global, and environment-specific vaults from one CLI.
+- Inject only the requested secrets with `hush2 NAME -- cmd`, or inject the active vault with `hush2 run`.
+- Mask secret values from child-process output by default.
 - Scan your repository for real leaked secret values from your vault.
 - Recover from older mixed-key corruption with `hush2 doctor`.
+
+## Best For
+
+- Solo developers and small teams working primarily from the terminal.
+- AI-assisted or agent-driven workflows where command execution is common but secret handling is risky.
+- Local development setups where you want explicit secret provenance and auditability.
+
+`hush2` is not a hosted team secrets platform. It is a local developer tool focused on safe runtime injection, masking, scanning, and recovery on one machine.
 
 ## Features
 
@@ -31,7 +42,19 @@ It stores secrets in an AES-256-GCM encrypted SQLite vault, injects them into su
 
 ## Install
 
-From a local checkout:
+From a local checkout today:
+
+```bash
+pipx install .
+```
+
+Or with `uv`:
+
+```bash
+uv tool install .
+```
+
+Or with plain `pip`:
 
 ```bash
 python -m pip install .
@@ -44,6 +67,12 @@ python -m pip install -e '.[dev]'
 ```
 
 ## Quick Start
+
+The core workflow is:
+
+1. Create a vault for the current project.
+2. Save the secrets the command actually needs.
+3. Run the command through `hush2`.
 
 Create a vault in your current project:
 
@@ -73,11 +102,33 @@ hush2 run ./deploy.sh
 hush2 OPENAI_API_KEY DATABASE_URL -- python app.py
 ```
 
+For agent-written commands, prefer the explicit pattern:
+
+```bash
+hush2 OPENAI_API_KEY -- python agent_task.py
+```
+
+That keeps secret selection narrow and makes provenance obvious in the audit log.
+
 Check vault health:
 
 ```bash
 hush2 doctor
 ```
+
+## Trust Checklist
+
+Before relying on `hush2` in a repo, do these once:
+
+```bash
+hush2 doctor
+hush2 scan --staged
+hush2 backup
+```
+
+- `doctor` confirms the vault is readable and authentication metadata is healthy.
+- `scan --staged` checks staged changes for exact secret leaks from your vault.
+- `backup` gives you a recoverable snapshot before larger migrations or imports.
 
 ## How hush2 Works
 
@@ -87,6 +138,8 @@ hush2 doctor
 4. Child process output is masked by default unless you opt out with `--no-mask`.
 5. Named secret requests in the exec pattern are vault-only unless you explicitly pass `--allow-env-fallback`.
 6. `hush2 doctor` can diagnose unreadable records and repair recoverable legacy corruption.
+
+The combination that makes `hush2` distinctive is local encrypted storage plus explicit runtime injection plus default masking plus exact-value leak scanning.
 
 ## Common Commands
 
@@ -215,6 +268,8 @@ hush2 export --env-file .env.secure
 hush2 export --tag prod
 ```
 
+This makes migration practical: you can adopt `hush2` without locking yourself into a proprietary format, and you can keep backups before larger changes.
+
 ## Secret History, Rollback, And Tags
 
 Version history is recorded when you update a secret:
@@ -297,6 +352,16 @@ hush2 run ./ci-script.sh
 
 This is the current behavior in the codebase today and is required on systems where `keyring` cannot store or retrieve the vault password.
 
+## Bringing It Into A Workflow
+
+If you are evaluating `hush2`, start with one concrete flow instead of moving every secret at once:
+
+1. Pick one command you already run locally, such as a deploy, migration, or integration test script.
+2. Move only the secrets that command needs into `hush2`.
+3. Run it with `hush2 NAME -- cmd` first, then expand to `hush2 run` if that repo benefits from full-vault injection.
+4. Add `hush2 scan --staged` to your pre-commit or release routine.
+5. Keep a fresh `hush2 backup` before bulk imports, environment migrations, or recovery operations.
+
 ## Security Notes
 
 - Secrets are encrypted at rest with AES-256-GCM.
@@ -306,6 +371,7 @@ This is the current behavior in the codebase today and is required on systems wh
 - `get`, `export`, and `run --no-mask` intentionally reveal values when asked to do so.
 - Requested names in `NAME -- CMD` are vault-only by default so secret provenance is explicit and auditable.
 - Recovery tooling can salvage readable legacy data, but truly unreadable secrets cannot be reconstructed.
+- `hush2` reduces accidental disclosure in local workflows, but it does not isolate child processes from secrets they are given.
 
 ## Project Docs
 

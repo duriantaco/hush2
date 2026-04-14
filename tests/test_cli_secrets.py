@@ -1,7 +1,9 @@
+from pathlib import Path
+
 from click.testing import CliRunner
 
 from hush2.cli import cli
-from hush2.utils.exit_codes import AUTH_FAILED
+from hush2.utils.exit_codes import AUTH_FAILED, ERROR
 
 
 def _init(runner, **kwargs):
@@ -72,6 +74,30 @@ class TestSetGet:
             )
             assert result.exit_code != 0
             assert "not found" in result.output
+
+    def test_missing_salt_fails_without_recreating_it(self, tmp_path):
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            _init(runner)
+            salt_path = Path(".hush2") / "envs" / "default" / "salt"
+            salt_path.unlink()
+
+            result = _invoke(runner, ["list"])
+            assert result.exit_code == ERROR
+            assert "Vault salt is missing" in result.output
+            assert not salt_path.exists()
+
+    def test_invalid_salt_fails_cleanly(self, tmp_path):
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            _init(runner)
+            salt_path = Path(".hush2") / "envs" / "default" / "salt"
+            salt_path.write_bytes(b"bad")
+
+            result = _invoke(runner, ["list"])
+            assert result.exit_code == ERROR
+            assert "Vault salt is invalid" in result.output
+            assert salt_path.read_bytes() == b"bad"
 
 
 class TestList:

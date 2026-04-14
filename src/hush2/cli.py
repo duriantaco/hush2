@@ -1,8 +1,4 @@
-"""CLI entry point — click group with -- dispatch for exec pattern."""
-
 from __future__ import annotations
-
-import sys
 
 import click
 
@@ -10,8 +6,6 @@ from hush2.utils.output import HushConsole, OutputMode
 
 
 class HushGroup(click.Group):
-    """Custom group that intercepts the -- exec pattern before normal routing."""
-
     @staticmethod
     def _consumes_value(arg: str) -> bool:
         return arg in ("--tag", "-t", "--env", "--mask-style")
@@ -135,9 +129,25 @@ def _resolve_vault_access(ctx: click.Context):
 def _open_vault_raw(ctx: click.Context):
     from hush2.vault.vault import Vault
     from hush2.vault.keychain import unlock_key
+    from hush2.utils.exit_codes import ERROR
 
     vault_path, password, console = _resolve_vault_access(ctx)
-    key = unlock_key(vault_path, password)
+    try:
+        key = unlock_key(vault_path, password)
+    except FileNotFoundError:
+        console.error(
+            "Vault salt is missing. Restore the original salt file from backup "
+            "or re-initialize the vault if recovery is not needed."
+        )
+        ctx.exit(ERROR)
+        raise SystemExit(ERROR)
+    except ValueError:
+        console.error(
+            "Vault salt is invalid. Restore the original salt file from backup "
+            "or re-initialize the vault if recovery is not needed."
+        )
+        ctx.exit(ERROR)
+        raise SystemExit(ERROR)
     vault = Vault(vault_path, key)
     vault.open()
     return vault, console
