@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and the project follows Semantic Versioning once releases are tagged.
 
+## [0.1.1](https://github.com/duriantaco/hush2/compare/v0.1.0...v0.1.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* harden vault import, masking, salt handling, and command launch errors ([ba4a8ae](https://github.com/duriantaco/hush2/commit/ba4a8aeddf52910381157b92a0a739ef1b855e25))
+
+
+### Documentation
+
+* sharpen hush2 positioning and onboarding ([28a01b1](https://github.com/duriantaco/hush2/commit/28a01b1682dc44ec68f368c258be2384aa83cd39))
+
 ## [Unreleased]
 
 ### Changed
