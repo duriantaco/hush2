@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hush2-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local encrypted secrets manager for developer and agent workflows."
 readme = "README.md"
 license = "MIT"
