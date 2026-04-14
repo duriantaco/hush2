@@ -96,18 +96,34 @@ def exec_cmd(ctx):
     else:
         masker = create_masker(secrets, mask_style)
 
-    exit_code = _run_with_masking(expanded_cmd, child_env, masker)
+    exit_code = _run_with_masking(expanded_cmd, child_env, masker, console)
     sys.exit(exit_code)
 
 
-def _run_with_masking(cmd, env, masker):
-    if masker is None:
-        result = subprocess.run(cmd, env=env)
-        return result.returncode
+def _run_with_masking(cmd, env, masker, console):
+    from hush2.utils.exit_codes import USER_ERROR
 
-    proc = subprocess.Popen(
-        cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    if masker is None:
+        try:
+            result = subprocess.run(cmd, env=env)
+            return result.returncode
+        except FileNotFoundError:
+            console.error(f"Failed to launch command '{cmd[0]}': command not found.")
+            return USER_ERROR
+        except OSError as exc:
+            console.error(f"Failed to launch command '{cmd[0]}': {exc}")
+            return USER_ERROR
+
+    try:
+        proc = subprocess.Popen(
+            cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+    except FileNotFoundError:
+        console.error(f"Failed to launch command '{cmd[0]}': command not found.")
+        return USER_ERROR
+    except OSError as exc:
+        console.error(f"Failed to launch command '{cmd[0]}': {exc}")
+        return USER_ERROR
 
     import threading
 

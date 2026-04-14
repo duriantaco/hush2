@@ -21,6 +21,7 @@ import click
 @click.pass_context
 def run_cmd(ctx, tags, no_mask, mask_style, cmd):
     from hush2.cli import _open_vault
+    from hush2.utils.exit_codes import USER_ERROR
     from hush2.utils.masking import create_masker
     from hush2.vault import audit as audit_mod
 
@@ -51,14 +52,21 @@ def run_cmd(ctx, tags, no_mask, mask_style, cmd):
     else:
         masker = create_masker(secrets, mask_style)
 
-    if masker is None:
-        result = subprocess.run(list(cmd), env=child_env)
-        sys.exit(result.returncode)
+    try:
+        if masker is None:
+            result = subprocess.run(list(cmd), env=child_env)
+            sys.exit(result.returncode)
 
-    proc = subprocess.Popen(
-        list(cmd), env=child_env,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    )
+        proc = subprocess.Popen(
+            list(cmd), env=child_env,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+    except FileNotFoundError:
+        console.error(f"Failed to launch command '{cmd[0]}': command not found.")
+        sys.exit(USER_ERROR)
+    except OSError as exc:
+        console.error(f"Failed to launch command '{cmd[0]}': {exc}")
+        sys.exit(USER_ERROR)
 
     def pipe_and_mask(input_stream, output_stream):
         for line in input_stream:

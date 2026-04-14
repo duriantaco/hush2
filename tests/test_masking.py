@@ -20,9 +20,17 @@ class TestMasking:
         masker = create_masker({}, "full")
         assert masker("unchanged") == "unchanged"
 
+    def test_empty_secret_value_is_ignored(self):
+        masker = create_masker({"EMPTY": ""}, "full")
+        assert masker("unchanged") == "unchanged"
+
     def test_multiple_secrets(self):
         masker = create_masker({"A": "aaa", "B": "bbb"}, "full")
         assert masker("aaa and bbb") == "[REDACTED] and [REDACTED]"
+
+    def test_empty_secret_value_does_not_break_other_masking(self):
+        masker = create_masker({"EMPTY": "", "TOKEN": "secret123"}, "full")
+        assert masker("secret123 here") == "[REDACTED] here"
 
     def test_longer_secret_replaced_first(self):
         masker = create_masker({"SHORT": "abc", "LONG": "abcdef"}, "full")

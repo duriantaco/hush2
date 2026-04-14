@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from hush2.vault.crypto import derive_key, generate_salt
+from hush2.vault.crypto import SALT_LENGTH, derive_key, generate_salt
 
 SERVICE_NAME = "hush2"
 SALT_FILE = "salt"
@@ -48,12 +48,25 @@ def get_or_create_salt(vault_dir: Path) -> bytes:
     """Read salt from vault dir, or create and persist a new one."""
     salt_path = vault_dir / SALT_FILE
     if salt_path.exists():
-        return salt_path.read_bytes()
+        salt = salt_path.read_bytes()
+        if len(salt) == SALT_LENGTH:
+            return salt
     salt = generate_salt()
     salt_path.write_bytes(salt)
     return salt
 
 
+def read_salt(vault_dir: Path) -> bytes:
+    salt_path = vault_dir / SALT_FILE
+    if not salt_path.exists():
+        raise FileNotFoundError(salt_path)
+
+    salt = salt_path.read_bytes()
+    if len(salt) != SALT_LENGTH:
+        raise ValueError("invalid_salt")
+    return salt
+
+
 def unlock_key(vault_dir: Path, password: str) -> bytes:
-    salt = get_or_create_salt(vault_dir)
+    salt = read_salt(vault_dir)
     return derive_key(password, salt)

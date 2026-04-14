@@ -79,8 +79,34 @@ def _parse_env(text: str, name_re: re.Pattern) -> dict[str, str]:
         value = value.strip()
 
         if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
+            quote = value[0]
             value = value[1:-1]
+            if quote == '"':
+                value = _unescape_double_quoted(value)
 
         if name_re.match(key):
             result[key] = value
     return result
+
+
+def _unescape_double_quoted(value: str) -> str:
+    result: list[str] = []
+    i = 0
+    while i < len(value):
+        ch = value[i]
+        if ch != "\\" or i + 1 >= len(value):
+            result.append(ch)
+            i += 1
+            continue
+
+        next_ch = value[i + 1]
+        if next_ch == "n":
+            result.append("\n")
+        elif next_ch in {'\\', '"', "$", "`"}:
+            result.append(next_ch)
+        else:
+            result.append("\\")
+            result.append(next_ch)
+        i += 2
+
+    return "".join(result)
